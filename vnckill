@@ -1,0 +1,49 @@
+#!/bin/bash
+if [ $# -eq 0 ]; then
+    ps -aux|awk -F'[ ]+' 'match($11,/vnc/){printf("    %s,%s,%s,%s\n",$1,$2,$11,$12)}'
+    exit 0
+fi
+
+for i in $@;do
+    dispport="$i"
+    echo "kill svn display port $dispport"
+    port=${dispport:1}
+    if [ ${dispport:0:1} != ":" ]; then
+        echo "the display port should start with :"
+        continue
+    fi 
+    file1=/tmp/.X${port}-lock
+    file2=/tmp/.X11-unix/X${port}
+    if [ -f $file1 ];then
+        pid=`cat $file1`
+    else
+        pid=0
+    fi
+
+    #rm the file first, in case this bash is killing the process himself hosted
+    #here we need the root permission, because the target Xvnc may started by the other users.    
+    if [ -f $file1 ];then
+        echo "--delete lock file $file1"
+        sudo rm -f $file1
+    else
+        echo "--lock file $file1 not exists"
+    fi
+
+    if [ -e $file2 ];then
+        echo "--delete lock file $file2"
+        sudo rm -f $file2
+    else
+        echo "--lock file $file2 not exists"
+    fi
+
+    #kill the Xvnc process if it exists
+    newpid=`ps -aux | awk -F'[ ]+' -v dispport="$dispport" -v pid="$pid" 'match($11, /vnc/)&&$12==dispport&&(pid==0||pid==$2){print $2}'`    
+    if [[ -n ${newpid} ]]; then
+    #if [ ${#newpid} -ne 0 ]; then
+        echo "--kill -9 $newpid"
+        sudo kill -9 $newpid
+    elif [ $( echo "$pid" ) -ne 0 ]; then
+        echo "--process PID $pid not exists."
+    fi
+done
+exit 0
