@@ -1,0 +1,26 @@
+#!/bin/bash
+#use source or .
+if [ $# -eq 0 ]; then
+    if [ ! -e  "proxy.ini" ]; then
+        echo "proxy.ini missing" 
+        return 1
+    fi
+    conf=( `cat proxy.ini` )
+    if [ ${#conf} -lt 4 ]; then
+        echo "proxy.ini error" 
+        return 1
+    fi
+    addr=${conf[0]}:${conf[1]}@${conf[2]}:${conf[3]}
+    export http_proxy=http://${addr}
+    export https_proxy=http://${addr}
+    export ftp_proxy=http://${addr}
+    echo "proxy setted at $addr"
+elif [ "$1" = "stop" ]; then
+    echo $1
+    export http_proxy=
+    export https_proxy=
+    export ftp_proxy=
+    echo "proxy stopped."
+else
+    echo "command wrong"
+fi
