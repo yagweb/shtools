@@ -1,11 +1,15 @@
 #!/bin/bash
-#use source or .
+#use source or .(dot)
+#Script_Path=$(dirname `which $0`) 
+Script_Path="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" 
+ini_path="${Script_Path}/proxy.ini"
+echo $ini_path
 if [ $# -eq 0 ]; then
-    if [ ! -e  "proxy.ini" ]; then
+    if [ ! -e  "${ini_path}" ]; then
         echo "proxy.ini missing" 
         return 1
     fi
-    conf=( `cat proxy.ini` )
+    conf=( `cat "${ini_path}"` )
     if [ ${#conf} -lt 4 ]; then
         echo "proxy.ini error" 
         return 1
