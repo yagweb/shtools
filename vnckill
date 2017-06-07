@@ -1,7 +1,6 @@
 #!/bin/bash
 if [ $# -eq 0 ]; then
     ps -aux|awk -F'[ ]+' 'match($11,/vnc/){printf("    %s,%s,%s,%s\n",$1,$2,$11,$12)}'
-    exit 0
 fi
 
 for i in $@;do
@@ -46,4 +45,4 @@ for i in $@;do
         echo "--process PID $pid not exists."
     fi
 done
-exit 0
+#exit 0
