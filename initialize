@@ -16,6 +16,10 @@
 	. proxy apt-on
 	. proxy apt-nocache-on
 
+#vi up-down become ABCD issue
+	sudo apt-get remove vim-common
+	sudo apt-get install vim
+
 #ssh
 	apt-get install ssh-server
 	ps -el | grep ssh  #check
@@ -25,7 +29,10 @@
 	apt-get install git
 	ssh-keygen
 
-#xrdp
+#xrdp + mate
+    #if not use mate ubuntu
+    echo "mate-session">~/.xsession
+    
 	apt-get install xrdp
 	sudo vi /etc/xrdp/startwm.sh
 	#append
@@ -49,6 +56,7 @@
 
 #samba
 	sudo apt-get install samba
+    #usually I will add two users, root the current user
 	sudo smbpasswd -a XXXX
 	sudo pluma /etc/samba/smb.conf
 
@@ -66,13 +74,32 @@
 	sudo /etc/init.d/samba restart
     #sudo service smbd restart
 
+#nfs
+	#on both client and server linux machine,
+	sudo apt-get install nfs-kernel-server
+
+    #server setting
+    sudo vi /etc/exports
+      <path> *(insecure, rw, sync, no_subtree_check, no_root_squash)
+    sudo service nfs-kernel-server start
+    #showmount -e
+
+    #client setting
+    sudo mount -t nfs ip:<path>  <localpath>
+
+    use ip = localhost, to mount test
+
 #cifs
 	sudo apt-get install cifs-utils
 	#sudo mkdir <local_path>
 	#sudo mount -t cifs -o username=XXX,password=XXX,uid=XXX //winIP/folder/ <local_path>
 
 #application softwares
-	anaconda
+	anaconda (use 'bash' to install, not '.')
+		#spyder cannot input bug, XKEYBOARD extension not present on the X server
+        #add to .bashrc
+		export QT_XKB_CONFIG_ROOT=/usr/share/X11/xkb
+
 	cmake, blas,..
 	mysql
 	FAST
