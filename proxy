@@ -3,7 +3,11 @@
 #Script_Path=$(dirname `which $0`) 
 Script_Path="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" 
 ini_path="${Script_Path}/proxy.ini"
-echo $ini_path
+#echo $ini_path
+
+if [ ! -d "${Script_Path}/tmp" ]; then
+    mkdir "${Script_Path}/tmp"
+fi
 
 if [ ! -e  "${ini_path}" ]; then
     echo "proxy.ini missing" 
@@ -21,21 +25,41 @@ if [ $# -eq 0 ]; then
     export https_proxy="https://${addr}"
     export ftp_proxy="ftp://${addr}"
     echo "proxy setted at $addr"
+
 elif [ "$1" = "stop" ]; then
     echo $1
     export http_proxy=
     export https_proxy=
     export ftp_proxy=
     echo "proxy stopped."
+
 elif [ "$1" = "apt-on" ]; then
     echo $1
+    tmp_path="${Script_Path}/tmp/apt.conf"
     echo -e "Acquire::http::proxy \"http://${addr}\";\n\
 Acquire::https::proxy \"https://${addr}\";\n\
-Acquire::ftp::proxy \"ftp://${addr}\";\n" > ${Script_Path}/apt.conf
-    sudo cp ${Script_Path}/apt.conf /etc/apt/apt.conf
-    echo "apt-get proxy on."
+Acquire::ftp::proxy \"ftp://${addr}\";\n" > $tmp_path
+    sudo cp $tmp_path /etc/apt/apt.conf
+    echo "--apt-get proxy on."
+
 elif [ "$1" = "apt-off" ]; then
     sudo rm /etc/apt/apt.conf
+    echo "--file /etc/apt/apt.conf removed."
+
+#fixed the "Hash Sum Mismatch" when it behind a proxy
+elif [ "$1" = "apt-cache-on" ]; then
+    echo $1
+    tmp_path="${Script_Path}/tmp/99fixbadproxy"
+    echo -e "Acquire::http::Pipeline-Depth 0;\n\
+Acquire::http::No-Cache true;\n\
+Acquire::BrokenProxy true;\n" > $tmp_path
+    sudo cp $tmp_path /etc/apt/apt.conf.d/99fixbadproxy
+    echo "--add file 99fixbadproxy."
+
+elif [ "$1" = "apt-cache-off" ]; then
+    sudo rm /etc/apt/apt.conf.d/99fixbadproxy
+    echo "--file 99fixbadproxy removed."
+
 else
-    echo "command wrong"
+    echo "--command wrong"
 fi
