@@ -47,7 +47,7 @@ elif [ "$1" = "apt-off" ]; then
     echo "--file /etc/apt/apt.conf removed."
 
 #fixed the "Hash Sum Mismatch" when it behind a proxy
-elif [ "$1" = "apt-cache-on" ]; then
+elif [ "$1" = "apt-nocache-on" ]; then
     echo $1
     tmp_path="${Script_Path}/tmp/99fixbadproxy"
     echo -e "Acquire::http::Pipeline-Depth 0;\n\
@@ -56,7 +56,7 @@ Acquire::BrokenProxy true;\n" > $tmp_path
     sudo cp $tmp_path /etc/apt/apt.conf.d/99fixbadproxy
     echo "--add file 99fixbadproxy."
 
-elif [ "$1" = "apt-cache-off" ]; then
+elif [ "$1" = "apt-nocache-off" ]; then
     sudo rm /etc/apt/apt.conf.d/99fixbadproxy
     echo "--file 99fixbadproxy removed."
 

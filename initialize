@@ -1,0 +1,82 @@
+#install OS
+	#remove the partitions of SSD, recreate for root and swap.
+
+#network
+	ifconfig | grep HWaddr
+	ethtool ethXXX
+	#update /etc/network/interfaces file, or use NetworkManager
+
+#copy shtools, modify file .rcbash
+	#export PATH="/home/XXX/shtools:$PATH"
+
+	#modified file proxy.ini
+
+	#usage
+	. proxy
+	. proxy apt-on
+	. proxy apt-nocache-on
+
+#ssh
+	apt-get install ssh-server
+	ps -el | grep ssh  #check
+	sudo /etc/init.d/ssh start
+
+#git
+	apt-get install git
+	ssh-keygen
+
+#xrdp
+	apt-get install xrdp
+	sudo vi /etc/xrdp/startwm.sh
+	#append
+	  . /etc/environment
+	  . /etc/profile
+
+	sudo vi /etc/xrdp/xrdp.ini
+	#insert
+	  [xrdp1]
+	  name=vnc-exists
+	  lib=libvnc.so
+	  username=askXXX
+	  password=ask
+	  ip=127.0.0.1
+	  port=ask5910
+
+	sudo service xrdp restart 
+
+# now we can use Remote Desktop
+# mate has Pluma, Pluma is based on gedit, So we don't need to install gedit.
+
+#samba
+	sudo apt-get install samba
+	sudo smbpasswd -a XXXX
+	sudo pluma /etc/samba/smb.conf
+
+	#append:
+	  [root]
+		comment = root
+		path = /
+		browseable = yes
+		read only = no
+		valid users = XX, @group
+
+    #test
+    testparm
+
+	sudo /etc/init.d/samba restart
+    #sudo service smbd restart
+
+#cifs
+	sudo apt-get install cifs-utils
+	#sudo mkdir <local_path>
+	#sudo mount -t cifs -o username=XXX,password=XXX,uid=XXX //winIP/folder/ <local_path>
+
+#application softwares
+	anaconda
+	cmake, blas,..
+	mysql
+	FAST
+	TensorFlow
+	PyTorch
+
+	
