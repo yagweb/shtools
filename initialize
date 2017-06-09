@@ -95,7 +95,9 @@
 	#sudo mount -t cifs -o username=XXX,password=XXX,uid=XXX //winIP/folder/ <local_path>
 
 #application softwares
-	anaconda (use 'bash' to install, not '.')
+	(runfile should use 'bash/sh' to install, not '.')
+
+	anaconda 
 		#spyder cannot input bug, XKEYBOARD extension not present on the X server
         #add to .bashrc
 		export QT_XKB_CONFIG_ROOT=/usr/share/X11/xkb
@@ -103,7 +105,28 @@
 	cmake, blas,..
 	mysql
 	FAST
+    CUDA & cuDNN
+		"you appear to be running an X server"
+        ctrl+alt+F1  #switch to tty1 user mode, GUI is running backend
+        
+		#close gnome, mate is based on gnome2 (a branch), Unity based on gnome3
+        sudo /etc/init.d/XXdm stop
+        #XXdm: lightdm for Unity, kdm for Kubuntu, gdm for gnome, 
+        #check, ctrl+alt+F7,shift back to GUI, should not show any desktop now
+		#xrdp desktop should also be closed now 
+
+		#if not know which service to close, !!maybe!! a workaroud is,
+        #sudo rm /tmp/.X*
+
+		sudo /etc/init.d/XXXX start
+
+		runfile, Run 'sudo sh XXXX.run'
+        sudo reboot
+        
+		append Cuda path to LD_LIBRARY_PATH
+   		append CuDNN path to CUDA_HOME
 	TensorFlow
+		sudo apt-get install libcupti-dev
 	PyTorch
 
 	
