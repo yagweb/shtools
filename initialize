@@ -54,6 +54,11 @@
 # now we can use Remote Desktop
 # mate has Pluma, Pluma is based on gedit, So we don't need to install gedit.
 
+#/etx/fstab
+	#mount local device and nfs
+	sudo pluma /etc/fatab
+	sudo mount -a
+
 #samba
 	sudo apt-get install samba
     #usually I will add two users, root the current user
@@ -77,11 +82,12 @@
 #nfs
 	#on both client and server linux machine,
 	sudo apt-get install nfs-kernel-server
+	sudo service nfs-kernel-server start
 
     #server setting
     sudo vi /etc/exports
       <path> *(insecure, rw, sync, no_subtree_check, no_root_squash)
-    sudo service nfs-kernel-server start
+    exportfs   #reload config file
     #showmount -e
 
     #client setting
@@ -97,36 +103,59 @@
 #application softwares
 	(runfile should use 'bash/sh' to install, not '.')
 
+    gcc
+
 	anaconda 
 		#spyder cannot input bug, XKEYBOARD extension not present on the X server
-        #add to .bashrc
-		export QT_XKB_CONFIG_ROOT=/usr/share/X11/xkb
+        echo "export QT_XKB_CONFIG_ROOT=/usr/share/X11/xkb" >> .bashrc
+        source .bashrc
 
 	cmake, blas,..
 	mysql
 	FAST
-    CUDA & cuDNN
+    CUDA
 		"you appear to be running an X server"
         ctrl+alt+F1  #switch to tty1 user mode, GUI is running backend
         
-		#close gnome, mate is based on gnome2 (a branch), Unity based on gnome3
+		#close X server service
         sudo /etc/init.d/XXdm stop
         #XXdm: lightdm for Unity, kdm for Kubuntu, gdm for gnome, 
-        #check, ctrl+alt+F7,shift back to GUI, should not show any desktop now
-		#xrdp desktop should also be closed now 
+        #check, ctrl+alt+F7, shift back to GUI, should not show any desktop now
+		
+		#xrdp remote desktop could not be closed by stop xrdp service!
+        #use my vnckill script!!
+        #stop the xrdp in case some one log in during the installation
+        sudo service xrdp stop
 
-		#if not know which service to close, !!maybe!! a workaroud is,
-        #sudo rm /tmp/.X*
+		#check, 
+        #ls -a /tmp/.X*
 
+		sudo service xrdp start
 		sudo /etc/init.d/XXXX start
 
-		runfile, Run 'sudo sh XXXX.run'
+		runfile, Run 'sudo sh XXXX.run  --silence'
         sudo reboot
         
-		append Cuda path to LD_LIBRARY_PATH
+		echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64/:$LD_LIBRARY_PATH" >> .bashrc
+		echo "export PATH=/usr/local/cuda/bin/:$PATH" >> .bashrc
+
+	cuDNN
+		#file can be copied to any place, here we put it to cuda
+		tar -xvf ...
+		sudo cp <the file cudnn.h> /usr/local/cuda/include
+        sudo cp <the files libcudnn*> /usr/local/cuda/lib64
+		sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn*
    		append CuDNN path to CUDA_HOME
-	TensorFlow
-		sudo apt-get install libcupti-dev
+
+	TensorFlow #better installed in virtualenv,
+		pip install --upgrade pip
+		pip install --upgrade --ignore-installed setuptools
+		sudo apt-get install --upgrade tensorflow-gpu
+        
+		#test
+		import tensorflow as tf
+		print(tf.__version__)
+
 	PyTorch
 
 	
