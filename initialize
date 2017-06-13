@@ -61,7 +61,9 @@
     #ip:path      nfs
 	sudo mount -a
 
-    showmount -e  #check
+    #check
+    sudo df
+    sudo mount -l
 
 #samba
 	sudo apt-get install samba
@@ -94,7 +96,7 @@
       <loacalpath> *(insecure,rw,sync,no_subtree_check,no_root_squash)
     #reload config file
     sudo exportfs -avr
-    service nfs reload 
+    service nfs-kernel-server reload 
 
     #client setting
     sudo mount -t nfs ip:<path>  <localpath>
