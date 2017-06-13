@@ -57,7 +57,11 @@
 #/etx/fstab
 	#mount local device and nfs
 	sudo pluma /etc/fatab
+    #for nfs
+    #ip:path      nfs
 	sudo mount -a
+
+    showmount -e  #check
 
 #samba
 	sudo apt-get install samba
@@ -86,9 +90,10 @@
 
     #server setting
     sudo vi /etc/exports
-      <path> *(insecure, rw, sync, no_subtree_check, no_root_squash)
-    exportfs   #reload config file
-    #showmount -e
+      <loacalpath> *(insecure, rw, sync, no_subtree_check, no_root_squash)
+    #reload config file
+    sudo exportfs -avr
+    service nfs reload 
 
     #client setting
     sudo mount -t nfs ip:<path>  <localpath>
