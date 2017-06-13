@@ -90,7 +90,8 @@
 
     #server setting
     sudo vi /etc/exports
-      <loacalpath> *(insecure, rw, sync, no_subtree_check, no_root_squash)
+       #no blank follow the comma!!!!
+      <loacalpath> *(insecure,rw,sync,no_subtree_check,no_root_squash)
     #reload config file
     sudo exportfs -avr
     service nfs reload 
