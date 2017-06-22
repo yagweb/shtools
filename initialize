@@ -118,6 +118,15 @@
         echo "export QT_XKB_CONFIG_ROOT=/usr/share/X11/xkb" >> .bashrc
         source .bashrc
 
+		pip install virtualenv
+		pip install jupyterlab    #a web-based IDE !!! jupyter lab to start it!
+			#edit config script to disable login token
+			jupyter lab --generate-config
+				c.NotebookApp.token = '<generated>'
+			#in project folder,
+			current="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+			jupyter lab --notebook-dir=$current --ip=0.0.0.0 --no-browser
+
 	cmake, blas,..
 	mysql
 	FAST
@@ -165,5 +174,26 @@
 		print(tf.__version__)
 
 	PyTorch
+
+	Hadoop & Spark
+		sudo adduser hadoop  
+		sudo pluma /etc/sudoers  #add root privilege for hadoop user
+        #login with the hadoop user
+
+		ssh-keygen -t rsa -P ""
+		cat /home/hadoop/.ssh/id_rsa.pub >> /home/hadoop/.ssh/authorized_keys
+		ssh localhost  #test it, then exit
+
+		download java, scala, hadoop, spark; version should compatiable
+		1 Install Java
+			1 sudo tar -xvf <java.gz> -C /usr/lib/jvm
+			2 edit the .bashrc of hadoop user
+				export JAVA_HOME=/usr/java/<jdk1.7.0_80>
+				export JRE_HOME=${JAVA_HOME}/jre
+				export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
+				export PATH=${JAVA_HOME}/bin:$PATH
+			3 set the default java
+				run the set-java script				
+				#test, java -version, javac -version
 
 	

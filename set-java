@@ -1,0 +1,4 @@
+for PROG in java javac jar javah javap; do
+	sudo update-alternatives --install /usr/bin/$PROG $PROG ${JAVA_HOME}/bin/$PROG 300
+done
+sudo update-alternatives --config java
