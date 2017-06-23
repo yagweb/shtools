@@ -178,6 +178,7 @@
 	Hadoop & Spark
 		sudo adduser hadoop  
 		sudo pluma /etc/sudoers  #add root privilege for hadoop user
+        #sudo pluma /etc/passwd  #update UID to 0
         #login with the hadoop user
 
 		ssh-keygen -t rsa -P ""
