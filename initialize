@@ -25,6 +25,22 @@
 	ps -el | grep ssh  #check
 	sudo /etc/init.d/ssh start
 
+	Setup passphraseless ssh - master deamons use ssh to control slaves
+		ssh-keygen -t rsa -P ""
+		#hadoop services on the same machine need comunication via ssh!!
+		cat /home/hadoop/.ssh/id_rsa.pub >> /home/hadoop/.ssh/authorized_keys
+		chmod 0600 ~/.ssh/authorized_keys
+
+		#test it, then exit
+		ssh localhost 
+		#debug
+		ssh -vvv localhost
+
+		#named node, yarn node, copy its shh-key to other nodes
+		ssh-copy-id user@host
+		or
+		ssh user@host 'mkdir -p .ssh&& cat >> .ssh/authorized_keys' < ~/.ssh/id_rsa.pub
+
 #git
 	apt-get install git
 	ssh-keygen
@@ -56,9 +72,13 @@
 
 #/etx/fstab
 	#mount local device and nfs
-	sudo pluma /etc/fatab
-    #for nfs
-    #ip:path      nfs
+	sudo pluma /etc/fstab
+
+	#for local
+	/dev/sdcX   /mnt/XX      ext4    defaults        0       2
+    #for nfs. path must be in /etc/exports of machine ip
+	ip:path     /mnt/002c    nfs     defaults        0       2
+
 	sudo mount -a
 
     #check
@@ -175,23 +195,46 @@
 
 	PyTorch
 
+	Jave
+		1 sudo tar -xvf <java.gz> -C /usr/lib/jvm
+		2 edit the .bashrc of hduser
+			export JAVA_HOME=/usr/lib/jvm/<jdk1.7.0_80>
+			export JRE_HOME=${JAVA_HOME}/jre
+			export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
+			export PATH=${JAVA_HOME}/bin:$PATH
+		3 set the default java
+			#if the user doesnot export ,
+			#export JAVA_HOME=/usr/lib/jvm/<jdk1.7.0_80>
+			else, load it first
+			source .bashrc
+
+			exec the set-java script use . not sh!!				
+			#test, java -version, javac -version
+
+	install pdsh
+		#all the nodes should bi-passphraseless ssh with the pdsh machine, include itself
+		pdsh -V #test
+		pdsh -w <hosts, > command
+        pdsh -g <file> command
+
 	Hadoop & Spark
-		sudo addgroup hadoop
+		sudo addgroup hadoop  #confirm by /etc/group
 		#add folder under home, orelse use useradd   
 		sudo adduser --ingroup hadoop hduser
-
-		#create a folder hadoop under /home, or put it /usr/local/, chown!!
-		sudo mkdir /home/hadoop #suggested
-		chown -R hduser:hadoop hadoop
   
-		sudo pluma /etc/sudoers  #add root privilege for hadoop group
-        #sudo pluma /etc/passwd  #update UID to 0
+		#we may need to run some sudo commands
+		sudo visudo  #add root privilege for hadoop group
+		#pluma /etc/sudoers  #directly edit the file may cause error
+		#for a group, the line hould start with %   
+        ###for user or sudo pluma /etc/passwd  #update UID to 0
         #login with the hadoop user
 
-		#update /etc/hosts
-		ip  master
-		ip slave1
+		#update /etc/hosts : copy to outer machines directly
+		ip phm1
+		ip phm2
 		...
+		#ping test
+		ping phmX
 
 		Setup passphraseless ssh - master deamons use ssh to control slaves
 			ssh-keygen -t rsa -P ""
@@ -205,28 +248,53 @@
 			ssh -vvv localhost
 
 			#named node, yarn node, copy its shh-key to other nodes
-			ssh-copy-id user@host
+			ssh-copy-id user@host  (user can be omitted if it's same with the current user)
 			or
 			ssh user@host 'mkdir -p .ssh&& cat >> .ssh/authorized_keys' < ~/.ssh/id_rsa.pub
 
+		#create folder /home/hadoop, chown!!
+		sudo mkdir /home/hadoop #suggested
+		sudo chown -R hduser:hadoop /home/hadoop
+		#create some temp - keep the same structure on all machine! use pdsh
+
+		#add all hosts of hadoop cluster to new file ~/.dsh/group/hadoop
+		#-g is not working
+		#the default user used by pdsh is pdsh, not the current user!
+		pdsh -w ssh:hduser@phm[1-3] mkdir 
+					/home/hadoop/
+						dfs
+		                   dfs/name
+		                   dfs/data
+						temp
+						   temp/dfs
+						yarn
+						   yarn/node
+						   yarn/app-logs
+						   yarn/log
+
 		download java, scala, hadoop, spark; version should compatiable
 		1 Install Java
-			1 sudo tar -xvf <java.gz> -C /usr/lib/jvm
-			2 edit the .bashrc of hadoop user
-				export JAVA_HOME=/usr/lib/jvm/<jdk1.7.0_80>
-				export JRE_HOME=${JAVA_HOME}/jre
-				export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
-				export PATH=${JAVA_HOME}/bin:$PATH
-			3 set the default java
-				exec the set-java script use . not sh!!				
-				#test, java -version, javac -version
 
-		2 Install Hadoop
+		#if firwall is running, disable it or enable port
+		sudo ufw status
+		sudo ufw disable
+
+		2 Install Hadoop (under any user, chown to hduser)
+
+			#we can config in the pdsh machine, then copy the whole source folder to other machines
+			copy config files to other machine
+				pdsh -w ssh:hduser@phm[2-3] scp phm1:$HADOOP_HOME $HADOOP_HOME/..
+
+			#we can also copy any file as we need. such as
+			copy config files to other machine
+				pdsh -w ssh:hduser@phm[2-3] scp phm1:$HADOOP_ETC/hadoop-env.sh $HADOOP_ETC
 
 			tar -xvf XX/hadoop-X.X.X.tar.gz -C /home/hadoop
 			edit env variables .bashrc: to simplify the command call
 				export HADOOP_HOME=/home/hadoop/hadoop-X.X.X
 				export PATH=$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PATH
+				#only the pdsh machine need this variable
+				export HADOOP_ETC=/home/hadoop/hadoop-2.3.7/etc/hadoop
 
 			NameNode, ResourceManager, MR Job History,.. : rest DataNode and NodeManager
 			use different account for deamons, such as, 'hdfs' for HDFS processes, 'yarn' account for YARN
@@ -237,20 +305,23 @@
 
 				hadoop-env.sh
 					export JAVA_HOME=/usr/lib/jvm/jdk1.7.0_80
-					other parameters, HADOOP_PID_DIR, HADOOP_LOG_DIR
-					export HADOOP_OPTS=-Djava.net.preferIPV4Stack=true
+					#other parameters, HADOOP_PID_DIR, HADOOP_LOG_DIR
+					#export HADOOP_OPTS=-Djava.net.preferIPV4Stack=true
 
 				core-site.xml
 					#can set <namenode> = localhost when install in single machine for test
 					#cluster install be replaced with namenode's ip
 					#use hostname not ip, edit /etc/hosts
-                    fs.defaultFS            hdfs://<namenode>:9000
+					#multiple domain names can be mapped to the site, such as the fs.default.name
+                    fs.defaultFS            hdfs://<host-of-namenode>:9000
 
 					#io.file.buffer.size          131072
 
 					#can be deleted for datanode recorvering, outside the hadoop home folder
 					#we need to copy folder to other places
-					hadoop.tmp.dir               /home/hadoop/tmp
+					hadoop.tmp.dir                   /home/hadoop/temp
+					hadoop.proxyuser.hduser.hosts    *
+					hadoop.proxyuser.hduser.groups   *
 
 			hdfs services [NameNode, DataNode, etc.]
 
@@ -258,29 +329,82 @@
 				  	all items, dfs.hosts.XX dfs.namenode.XX dfs.datanode.XX
 
 					dfs.replication              1 #less than the number of datanodes
-					#store data?
-					dfs.namenode.name.dir        file:/home/hadoop/mydata/hdfs/namenode
-					dfs.datanode.name.dir        file:/home/hadoop/mydata/hdfs/datanode
+					dfs.namenode.http-address    <ip-of-out-net>:50070					
+					dfs.namenode.name.dir        /home/hadoop/dfs/name
+					#dfs.datanode.http.address    localhost:50075
+					dfs.datanode.data.dir        file:/home/hadoop/dfs/data, XXX #other disk folders!!					
+					dfs.namenode.secondary.http-address   phm1:9001					
+					dfs.webhdfs.enabled          true
+
+				copy-to-slaves by pdsh
 					
-			    start
+			    start  :  namenode, datanode, secondarynamenode
+					#if $HADOOP_HOME/bin/ and $HADOOP_HOME/sbin/ are added to PATH, 
+					#we can use commands or scripts name such as 'hdfs' directly, else we need '$HADOOP_HOME/bin/hdfs'
+
 					#For the first time, format a new distributed filesystem as hdfs
-					.bin/hadoop namenode -format  <cluster_name> 
+					hdfs namenode -format  [<cluster_name>] 
 
-					for each not in hdfs cluster
-					hdfs --daemon start datanode
-					hdfs --daemon start namenode
-
+					#or, start the processes on all the nodes
+					#do it on the namenode!
 					start-dfs.sh
+					
+					#start one by one as needed, pdsh can be used 
+					hadoop-daemon.sh start namenode
+					hadoop-daemon.sh start secondarynamenode
+					#use pdsh to start all datanode, pdsh -w ssh:hduser@phm[2-3] $HADOOP_HOME/sbin/  
+					#pdsh must use fullpath of hadoop-daemon, because .bashrc is not loaded by ssh process?
+					hadoop-daemon.sh start datanode
 
-					check: web interface for namenode    http://<hostname>:9870
+				check 
+					#check whether the daemons are running:
+					#jps is a java command, java VM process status tool 
+					#same as, ps aux | grep java
+					pdsh -w ssh:hduser@phm[1-3] $JAVA_HOME/bin/jps
 
+					#then check the web interface of datanode   
+					http://<hostname>:50070
+                    #datanode
+					http://<hostname>:50075
+					#secondarynamenode (in the config file)
+					phm1:9001	
+
+				stop
 					stop-dfs.sh
+					or, stop one by one,
+					hadoop-daemon.sh stop XX
 
-			config yarn
+			mapred module : [optional jobhistory service]
+				#it can run locally, and run on yarn; it can use local fs, or hdfs!!
+
+				#default parameters - user can change set these parameters for each job!!
+
+				mapred-site.xml:
+					#mapreduce.map.XX, mapreduce.reduce.XX, mapreduce.task.XX, mapreduce.jobhistory.XX
+				    
+					#if remove this line, MR will run locally
+					mapreduce.framework.name         yarn
+				
+					#mapred run by nodemanager, write to jobhistory according to this config
+					mapreduce.jobhistory.address            phm1:10020
+					mapreduce.jobhistory.webapp.address     <ip-of-out-net>:19888
+					#mapreduce.jobhistory.intermediate-done-dir    /home/hadoop/XX  #default is hdfs folder
+					#mapreduce.jobhistory.done-dir          XXX
+
+					mapreduce.job.tracker            phm1:54311
+
+				start
+					mr-jobhistory-daemon.sh start historyserver
+
+			yarn services
+
+				#not needed? because it added in .bashrc
+				yarn-env.sh
+					export JAVA_HOME=/usr/lib/jvm/jdk1.7.0_80
 
 				yarn-site.xml for NodeManager, ResourceManager and HistoryManager etc.
 				  all items:
-					yarn.acl.XX
+					yarn.acl.XX, 
 					yarn.resourcemanager.XXX
 					yarn.schedular.XXX
 					yarn.nodemanager.XXX
@@ -288,59 +412,78 @@
 				  for single node
 					yarn.nodemanager.aux-services    mapreduce_shuffle
 					yarn.nodemanager.env-whitelist   JAVA_HOME,HADOOP_COMMON_HOME,HADOOP_HDFS_HOME,HADOOP_CONF_DIR,CLASSPATH_PREPEND_DISTCACHE,HADOOP_YARN_HOME,HADOOP_MAPRED_HOME
+				  for cluster
+					yarn.resourcemanager.resource-tracker.address      phm1:8031
+					yarn.resourcemanager.scheduler.address             phm1:8030
+					yarn.resourcemanager.scheduler.class               org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler
+					yarn.resourcemanager.address                       phm1:8032 
+					yarn.resourcemanager.admin.address                 phm1:8033
+					yarn.resourcemanager.webapp.address                <ip-of-out-net>:8088  #can be bind to the other network interface
+					yarn.nodemanager.local-dirs                        /home/hadoop/yarn/node
+					yarn.nodemanager.address                           localhost:8994   #localhot, not master!!
+					yarn.nodemanager.resource.memory-mb                40960 # must large than 1024
+                    yarn.nodemanager.resource.cpu-vcores               56 # cat /proc/cpuinfo | grep "processor"
+					yarn.nodemanager.remote-app-log-dir                /home/hadoop/yarn/app-logs
+					yarn.nodemanager.log-dirs                          /home/hadoop/yarn/log
+					yarn.nodemanager.aux-services                      mapreduce_shuffle
+					yarn.nodemanager.aux-services.mapreduce.shuffle.class   org.apache.hadoop.mapred.ShuffleHandler
 
-				mapred-site.xml: for MapReduce Take JobHistory					
-					mapreduce.framework.name     yarn
-					mapreduce.map.XX
-					mapreduce.reduce.XX
-					mapreduce.task.XX
-					mapreduce.jobhistory.XX
+				slaves  #used to send command to all these nodes
+					list all hostname/ip in /etc/hadoop/works file
 
-			slaves  #used to send command to all these nodes
-				list all hostname/ip in /etc/hadoop/works file
-
-			start yarn services
-				#on each machine:
-				yarn --deamon start resourcemanager
-				or
-				yarn --deamon start nodemanager
-				yarn --deamon start proxymanager
+			start yarn services : resourcemanager, nodemanager, proxymanager
 
 				#on the center machine, all the workers in file 'workers' will be started!
 				start-yarn.sh 
 
-				web interface for ResourceManager: http://localhost:8088
+				#one by one as needed, according to each machine's role:
+				yarn-deamon.sh start resourcemanager
+				yarn-deamon.sh start nodemanager
+				yarn-deamon.sh start proxymanager
 
-				mapred --deamon start historyserver 
+			check  # web must use phm1, not localhost, if you have 2 or more net interfaces!!
+				#check whethere the processes are running via jps
+				jps #list the java process on this machine, hdfs and yarn are all java ps
 
-				web interface for mapred    http://localhost:19888
+				#then,
+				#web interface for ResourceManager: 
+				http://phm1:8088   #yarn.resourcemanager.webapp.address in yarn-site.xml
 
-			check services via web interface or 
-				jps #list the services on this machine
+				#web interface for mapred:
+			    http://phm1:19888
+
+			check log! if server cannot start!
+				$HADOOP_HOME/logs
 
 			stop
-				#./bin/start-all.sh  #better start one by one
-				./bin/stop-all.sh
+				stop-yarn.sh
+				#one-by-one
+				yarn-deamon.sh stop XXX 
 
 		run example in local fs non-distributed mode - MapReduce job #open terminal at hadoop home
 			mkdir input
 			cp etc/hadoop/*.xml input				
-			hadoop jar .share/hadoop/mapreduce share/hadoop/mapreduce/hadoop-mapreduce-examples-3.0.0-alpha3.jar grep input output 'dfs[a-z.]+'
+			hadoop jar .share/hadoop/mapreduce share/hadoop/mapreduce/hadoop-mapreduce-examples-X.X.X.jar grep input output 'dfs[a-z.]+'
 			cat output/*
 
 		run example in hdfs
-			#these two folder are needed to run MR jobs
+			#these two folder are the current working folder just like linux ~
+			# for example the input means  /user/<username>/input
+			# or you can absolute path, such as /input
 			hdfs dfs -mkdir /user
 			hdfs dfs -mkdir /user/<username>
 
 			#cp data from local fs to hdfs
 			hdfs dfs -mkdir input
-			hdfs dfs -put etc/hadoop/*.xml input
+			hdfs dfs -put $HADOOP_HOME/etc/hadoop/*.xml input
 
-			hadoop jar .share/hadoop/mapreduce share/hadoop/mapreduce/hadoop-mapreduce-examples-3.0.0-alpha3.jar grep input output 'dfs[a-z.]+'
+			hadoop jar .share/hadoop/mapreduce share/hadoop/mapreduce/hadoop-mapreduce-examples-X.X.X.jar grep input output 'dfs[a-z.]+'
 
 			#cp data from hdfs to local fs
 			hdfs dfs -get output output
 			cat output/*
+		FAQ:
+			#nodemanager not running
+			#nodemanager cann't allocate containers
 
 	
