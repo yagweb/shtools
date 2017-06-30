@@ -294,7 +294,7 @@
 				export HADOOP_HOME=/home/hadoop/hadoop-X.X.X
 				export PATH=$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PATH
 				#only the pdsh machine need this variable
-				export HADOOP_ETC=/home/hadoop/hadoop-2.3.7/etc/hadoop
+				export HADOOP_CONF_DIR=/home/hadoop/hadoop-2.3.7/etc/hadoop
 
 			NameNode, ResourceManager, MR Job History,.. : rest DataNode and NodeManager
 			use different account for deamons, such as, 'hdfs' for HDFS processes, 'yarn' account for YARN
@@ -312,7 +312,8 @@
 					#can set <namenode> = localhost when install in single machine for test
 					#cluster install be replaced with namenode's ip
 					#use hostname not ip, edit /etc/hosts
-					#multiple domain names can be mapped to the site, such as the fs.default.name
+
+					#let Hadoop modules konw where the HDFS NameNode is located
                     fs.defaultFS            hdfs://<host-of-namenode>:9000
 
 					#io.file.buffer.size          131072
@@ -330,9 +331,9 @@
 
 					dfs.replication              1 #less than the number of datanodes
 					dfs.namenode.http-address    <ip-of-out-net>:50070					
-					dfs.namenode.name.dir        /home/hadoop/dfs/name
+					dfs.namenode.name.dir        file:///home/hadoop/dfs/name
 					#dfs.datanode.http.address    localhost:50075
-					dfs.datanode.data.dir        file:/home/hadoop/dfs/data, XXX #other disk folders!!					
+					dfs.datanode.data.dir        file:///home/hadoop/dfs/data, XXX #other disk folders!!					
 					dfs.namenode.secondary.http-address   phm1:9001					
 					dfs.webhdfs.enabled          true
 
@@ -374,28 +375,6 @@
 					or, stop one by one,
 					hadoop-daemon.sh stop XX
 
-			mapred module : [optional jobhistory service]
-				#it can run locally, and run on yarn; it can use local fs, or hdfs!!
-
-				#default parameters - user can change set these parameters for each job!!
-
-				mapred-site.xml:
-					#mapreduce.map.XX, mapreduce.reduce.XX, mapreduce.task.XX, mapreduce.jobhistory.XX
-				    
-					#if remove this line, MR will run locally
-					mapreduce.framework.name         yarn
-				
-					#mapred run by nodemanager, write to jobhistory according to this config
-					mapreduce.jobhistory.address            phm1:10020
-					mapreduce.jobhistory.webapp.address     <ip-of-out-net>:19888
-					#mapreduce.jobhistory.intermediate-done-dir    /home/hadoop/XX  #default is hdfs folder
-					#mapreduce.jobhistory.done-dir          XXX
-
-					mapreduce.job.tracker            phm1:54311
-
-				start
-					mr-jobhistory-daemon.sh start historyserver
-
 			yarn services
 
 				#not needed? because it added in .bashrc
@@ -413,6 +392,7 @@
 					yarn.nodemanager.aux-services    mapreduce_shuffle
 					yarn.nodemanager.env-whitelist   JAVA_HOME,HADOOP_COMMON_HOME,HADOOP_HDFS_HOME,HADOOP_CONF_DIR,CLASSPATH_PREPEND_DISTCACHE,HADOOP_YARN_HOME,HADOOP_MAPRED_HOME
 				  for cluster
+					yarn.resourcemanager.hostname                      phm1
 					yarn.resourcemanager.resource-tracker.address      phm1:8031
 					yarn.resourcemanager.scheduler.address             phm1:8030
 					yarn.resourcemanager.scheduler.class               org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler
@@ -459,6 +439,28 @@
 				stop-yarn.sh
 				#one-by-one
 				yarn-deamon.sh stop XXX 
+
+			mapred module : [optional jobhistory service]
+				#it can run locally, and run on yarn; it can use local fs, or hdfs!!
+
+				#default parameters - user can change set these parameters for each job!!
+
+				mapred-site.xml:
+					#mapreduce.map.XX, mapreduce.reduce.XX, mapreduce.task.XX, mapreduce.jobhistory.XX
+				    
+					#if remove this line, MR will run locally
+					mapreduce.framework.name         yarn
+				
+					#mapred run by nodemanager, write to jobhistory according to this config
+					mapreduce.jobhistory.address            phm1:10020
+					mapreduce.jobhistory.webapp.address     <ip-of-out-net>:19888
+					#mapreduce.jobhistory.intermediate-done-dir    /home/hadoop/XX  #default is hdfs folder
+					#mapreduce.jobhistory.done-dir          XXX
+
+					mapreduce.job.tracker            phm1:54311
+
+				start
+					mr-jobhistory-daemon.sh start historyserver
 
 		run example in local fs non-distributed mode - MapReduce job #open terminal at hadoop home
 			mkdir input
